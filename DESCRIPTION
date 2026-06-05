@@ -1,0 +1,17 @@
+Type: Project
+Package: DisentanglingNetworkDependenceSimulation
+Title: Simulation Code for Disentangling Network Dependence
+Version: 0.1.0
+Authors@R: c(
+    person("Zhejia", "Dong", role = c("aut", "cre"))
+    )
+Description: Simulation code for evaluating spurious associations among network-dependent variables, pre-whitening adjustments, and linear network autocorrelation models.
+License: MIT
+Encoding: UTF-8
+Imports:
+    energy,
+    expm,
+    igraph,
+    MASS,
+    optimx,
+    sna
