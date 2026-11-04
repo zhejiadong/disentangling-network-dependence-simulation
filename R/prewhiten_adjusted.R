@@ -3,7 +3,7 @@
 # and beta_column (the coefficient index used for the scalar inference fields).
 # Include an intercept column in D when required; whitening transforms it too.
 # Fit lm.fit(D_whitened, Y_whitened) without adding another intercept.
-# d is the covariance polynomial degree. Controls preserve the original defaults.
+# d is the covariance polynomial degree.
 prepare_spectral <- function(input) {
   eigen_A <- eigen(input$A, symmetric = TRUE)
 
