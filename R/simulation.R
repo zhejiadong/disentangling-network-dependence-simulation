@@ -26,7 +26,10 @@ simulate_process <- function(
   outcome[1, ] <- rnorm(popn)
 
   if (lnam) {
-    outcome[2, ] <- qr.solve(identity_matrix - rho * adjacency, outcome[1, ])
+    outcome[2, ] <- qr.solve(
+      identity_matrix - rho * adjacency,
+      outcome[1, ] + rnorm(popn, 0, epsilon)
+    )
   } else {
     for (time_index in 2:(max_time + 1)) {
       outcome[time_index, ] <-
