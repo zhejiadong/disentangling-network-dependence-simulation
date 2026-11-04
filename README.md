@@ -1,138 +1,49 @@
-# Disentangling Network Dependence among Multiple Variables
+# Disentangling network dependence among multiple variables
 
-This repository contains code for the paper [Disentangling network dependence among multiple variables](https://arxiv.org/abs/2506.20974).
+R code for the JRSSA article ([paper](https://arxiv.org/abs/2506.20974)). The scripts generate Figures 1–2 and Tables 1–2, C1–C2. FHS data are not distributed.
 
-## Repository Contents
+## Run
 
-- `R/simulation.R`: functions for network generation and data-generating process for the simulation studies.
-- `R/prewhiten.R`: functions for the pre-whitening approach, constructing the proposed variance-covariance matrix, solving the mixed effect model through the optimization algorithm mentioned in the paper.
-- `R/lnam.R`: functions to run the (linear) network autocorrelation model, fitted with `sna::lnam()`, and to extract the estimated covariance structure for pre-whitening.
-- `R/summary.R`: functions for summarizing rejection rates across simulation replicates.
-- `R/figure2.R`: code for Figure 2, illustrating how the variance-covariance structure changes under different transmission processes.
-- `R/workflow.R`: a wrapper for running the simulation comparison from an R session.
-
-## Dependencies
-
-The main R packages are listed in `DESCRIPTION`. The analysis uses `igraph`, `sna`, `energy`, `MASS`, `expm`, and `optimx`.
-
-## Simulated Data Structure
-
-The function `simulate_scenarios()` returns a list of simulation scenarios. Each scenario contains a list of simulation replicates. Each replicate has the following structure:
+Install the R dependencies once (`Matrix` is supplied with R):
 
 ```r
-list(
-  covariate = list(
-    time0 = numeric(n),
-    time1 = numeric(n)
-  ),
-  outcome = list(
-    time0 = numeric(n),
-    time1 = numeric(n)
-  )
-)
+install.packages(c("igraph", "sna", "energy", "ape", "numDeriv"))
 ```
 
-For LNAM-generated variables, the second element is named `timeequl` rather than `time1`, following the notation in the original simulation code. In both cases, the methods use the second element of each variable list as the observed network-dependent covariate and outcome.
+Run from the repository root:
 
-The adjacency matrix is stored separately. It should be an `n` by `n` matrix with the same node order as the covariate and outcome vectors.
-
-## Quick Check in R
-
-To check that the code runs, start R from the repository root and run a small simulation with five replicates:
-
-```r
-source("R/simulation.R")
-source("R/prewhiten.R")
-source("R/lnam.R")
-source("R/summary.R")
-source("R/workflow.R")
-
-small_table <- run_simulation_comparison(
-  n_sim = 5,
-  popn = 50,
-  edges = 80,
-  seed = 321,
-  cores = 1
-)
-
-small_table
+```sh
+(cd illustrations && Rscript 01_figures.R)
+(cd simulation && Rscript 01_table1.R)
+# Authorized FHS inputs must first be placed in fhs_application/data_raw/.
+(cd fhs_application && Rscript 01_prepare_data.R)
+(cd fhs_application && Rscript 02_analysis.R)
+(cd fhs_application && Rscript 03_tables.R)
 ```
 
-The output is a rejection-rate table. With only five replicates, the numbers are intended only as a code check, not as simulation evidence.
+In RStudio, set the working directory to the script's folder and `source()` it. Settings appear at the top of each driver. The illustration uses 1,000 replicates and 10,000 updates; Table 1 uses 500 replicates per scenario, 500 nodes and 500 edges. Reduced settings are useful for code checks, not paper results.
 
-## Running the Proposed Pre-Whitening Method
+## Article-to-code map
 
-With simulated data from this repository:
+All filenames below are relative to the corresponding script folder.
 
-```r
-source("R/simulation.R")
-source("R/prewhiten.R")
+| Item | Input | Code | Generated output |
+|---|---|---|---|
+| Figure 1 | Synthetic 10-node, 15-edge graph; seed 124 | `illustrations/01_figures.R` | `figures/figure1.pdf` (network, adjacency, geodesic, sample t=1, t=2, t=10,000) |
+| Figure 2 | Same graph and t=1 process | `illustrations/01_figures.R` | `figures/figure2.pdf` (true vs sample t=1) |
+| Table 1 | Independent X/Y on a synthetic 500-node, 500-edge graph | `simulation/01_table1.R`, `R/simulation.R`, `R/prewhiten.R`, `R/lnam.R`, `R/summary.R` | `results/table1.csv`, `results/table1.tex` |
+| Table 2 | Authorized prepared FHS cohorts/graphs | `fhs_application/02_analysis.R`, `methods.R`, `03_tables.R` | `results/table2.csv`, `results/table2.tex` |
+| Table C1 | Same two graphs | `fhs_application/03_tables.R`, `reporting.R` | `results/tableC1.csv`, `results/tableC1.tex` |
+| Table C2 | Same aligned cohorts/graphs | `fhs_application/03_tables.R` | `results/tableC2.csv`, `results/tableC2.tex` |
 
-network <- make_erdos_renyi_network(popn = 500, edges = 500, seed = 321)
-simulations <- simulate_scenarios(network$adjacency, n_sim = 10)
+CSVs preserve numeric results; LaTeX files use the article's table layouts. Figure scripts also save the individual panel PDFs. Figure 2 reuses Figure 1's sample covariance at t=1.
 
-fit <- estimate_mle_prewhiten(
-  adjacency = network$adjacency,
-  simulation = simulations[[1]][[1]]
-)
-```
+## Settings and reproduction
 
-For real data, use the vector-level function directly:
+- Illustrations use a 10-node, 15-edge graph with seed 124. At t=1/2, kappa=0.9, alpha=0.1 and innovation SD=0.5; at t=10,000, kappa=0.234, alpha=0.09 and innovation SD=0.1. The theoretical t=1 covariance is `0.81 A^2 + 0.18 A + 0.26 I`.
+- Table 1 uses direct kappa/alpha=(0.7,0.3), (0.8,0.2), (0.9,0.1), and equilibrium rho=0.25, 0.27, 0.29, with innovation SD=0.1. Proposed and NAM whitening fit separate X and Y covariance models. Incomplete/nonfinite p-values stop the summary rather than changing its denominator.
+- FHS models use BMI as exposure and LVM/height as outcome, adjusted for age, sex and SBP. Proposed d=2 inference uses the joint observed Hessian and a 1.96 normal interval; OLS/NAM use residual-df t intervals. Table 2 displays residual Moran p-values, not coefficient p-values.
 
-```r
-source("R/prewhiten.R")
+These are fresh seeded Monte Carlo runs. Historical intermediate RNG states and saved samples are unavailable, so exact printed-number replay is not promised; graph-library versions and base-R rendering may also differ. Session information is saved with outputs.
 
-fit <- estimate_mle_prewhiten_vectors(
-  adjacency = adjacency,
-  x = exposure_vector,
-  y = outcome_vector
-)
-```
-
-Here `adjacency` is an `n` by `n` network adjacency matrix, and `exposure_vector` and `outcome_vector` are length-`n` numeric vectors ordered in the same way as the rows and columns of `adjacency`.
-
-## Running the NAM method
-
-The LNAM code uses the `lnam()` function from the `sna` package:
-
-```r
-source("R/prewhiten.R")
-source("R/lnam.R")
-
-fit <- estimate_lnam_prewhiten(
-  adjacency = network$adjacency,
-  simulation = simulations[[1]][[1]]
-)
-```
-
-For real data:
-
-```r
-source("R/prewhiten.R")
-source("R/lnam.R")
-
-fit <- estimate_lnam_prewhiten_vectors(
-  adjacency = adjacency,
-  x = exposure_vector,
-  y = outcome_vector
-)
-```
-
-This fits `sna::lnam(y, x = x, W1 = adjacency)` and uses the estimated LNAM covariance structure for pre-whitening.
-
-## Generating Figure 2
-
-Figure 2 illustrates how the variance-covariance matrix changes under different underlying transmission processes. To generate the figure from R:
-
-```r
-source("R/simulation.R")
-source("R/figure2.R")
-
-make_figure2(
-  output = "figure2_variance_covariance_structure.pdf",
-  n_sim = 1000,
-  seed = 124
-)
-```
-
-The defaults follow the small synthetic network example in the original figure code: 10 nodes, 15 edges, and 1,000 simulation replicates. The output path can be changed through the `output` argument.
+See [FHS inputs and construction](fhs_application/README.md) for accessions, fields and table definitions. Run protected FHS data only in the authorized environment. Raw/prepared data, IDs, graphs, fits, results and logs must remain private and are ignored by Git. Artificial-fixture checks are not a protected-data run: empirical reproduction still requires comparison of reconstructed IDs, edges and ordering with the frozen analysis inputs and regeneration of graph summaries.
