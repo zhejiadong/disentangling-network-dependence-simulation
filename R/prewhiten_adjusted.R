@@ -1,4 +1,9 @@
-# Full-design Gaussian GLS and NAM; full observed-Hessian inference.
+# Adjusted Gaussian finite-covariance MLE with full observed-Hessian inference.
+# input: symmetric adjacency A, numeric outcome Y, full-rank mean design D,
+# and beta_column (the coefficient index used for the scalar inference fields).
+# Include an intercept column in D when required; whitening transforms it too.
+# Fit lm.fit(D_whitened, Y_whitened) without adding another intercept.
+# d is the covariance polynomial degree. Controls preserve the original defaults.
 prepare_spectral <- function(input) {
   eigen_A <- eigen(input$A, symmetric = TRUE)
 
@@ -13,7 +18,9 @@ prepare_spectral <- function(input) {
 fit_joint_finite <- function(
   input,
   spectral,
-  d
+  d,
+  n_random_starts = 12L,
+  optimizer_maxit = 3000L
 ) {
   n <- length(input$Y)
   p <- ncol(input$D)
@@ -354,48 +361,21 @@ fit_joint_finite <- function(
     min_variance_eigenvalue = min(variance_values),
     hessian_min_eigenvalue = min(hessian_values),
     equivalence_error = equivalence_error,
+    # Symmetric whitening in the original observation coordinates.
+    Y_whitened = as.numeric(U %*% (Y_rot / sqrt(variance_values))),
+    D_whitened = U %*% (D_rot / sqrt(variance_values)),
+    # Retain the full joint covariance, not a redesigned uncertainty estimate.
+    full_vcov = full_vcov,
+    conditional_vcov = conditional_vcov,
+    coefficient_se = setNames(
+      if (min(hessian_values) > 1e-8 && !is.null(full_vcov) &&
+          all(is.finite(full_vcov))) {
+        sqrt(diag(full_vcov)[seq_len(p)])
+      } else {
+        rep(NA_real_, p)
+      }, colnames(input$D)
+    ),
     whitened_residual = whitened_residual,
     fit_table = fit_table
-  )
-}
-
-fit_joint_lnam <- function(input) {
-  X <- input$D
-
-  fit <- sna::lnam(
-    y = input$Y,
-    x = X,
-    W1 = input$A,
-    null.model = "mean",
-    method = "BFGS"
-  )
-
-  beta_hat <- as.numeric(fit$beta["bmi"])
-  se <- as.numeric(fit$beta.se["bmi"])
-  statistic <- beta_hat / se
-  p_value <- 2 * stats::pt(
-    abs(statistic),
-    df = fit$df.residual,
-    lower.tail = FALSE
-  )
-  critical <- stats::qt(
-    0.975,
-    df = fit$df.residual
-  )
-
-  list(
-    beta = beta_hat,
-    se = se,
-    statistic = statistic,
-    p_value = p_value,
-    ci_lower = beta_hat - critical * se,
-    ci_upper = beta_hat + critical * se,
-    rho = as.numeric(fit$rho1[1]),
-    rho_se = as.numeric(fit$rho1.se[1]),
-    sigma2 = as.numeric(fit$sigmasq[1]),
-    log_likelihood = as.numeric(fit$lnlik.model[1]),
-    df_residual = fit$df.residual,
-    disturbances = as.numeric(fit$disturbances),
-    coefficients = fit$beta
   )
 }

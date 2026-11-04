@@ -2,7 +2,48 @@
 n_random_starts <- 12L
 optimizer_maxit <- 3000L
 library(igraph)
-source("methods.R", local = TRUE)
+source("../R/prewhiten_adjusted.R", local = TRUE)
+
+fit_joint_lnam <- function(input) {
+  X <- input$D
+
+  fit <- sna::lnam(
+    y = input$Y,
+    x = X,
+    W1 = input$A,
+    null.model = "mean",
+    method = "BFGS"
+  )
+
+  beta_hat <- as.numeric(fit$beta["bmi"])
+  se <- as.numeric(fit$beta.se["bmi"])
+  statistic <- beta_hat / se
+  p_value <- 2 * stats::pt(
+    abs(statistic),
+    df = fit$df.residual,
+    lower.tail = FALSE
+  )
+  critical <- stats::qt(
+    0.975,
+    df = fit$df.residual
+  )
+
+  list(
+    beta = beta_hat,
+    se = se,
+    statistic = statistic,
+    p_value = p_value,
+    ci_lower = beta_hat - critical * se,
+    ci_upper = beta_hat + critical * se,
+    rho = as.numeric(fit$rho1[1]),
+    rho_se = as.numeric(fit$rho1.se[1]),
+    sigma2 = as.numeric(fit$sigmasq[1]),
+    log_likelihood = as.numeric(fit$lnlik.model[1]),
+    df_residual = fit$df.residual,
+    disturbances = as.numeric(fit$disturbances),
+    coefficients = fit$beta
+  )
+}
 
 formulas <- list(
   no_height = lvm_height1 ~ bmi + age + female + sbp)
@@ -48,7 +89,8 @@ for (label in names(cohorts)) {
 
     ordinary <- lm(formulas[[spec]], data = dat)
     fits[[label]][[spec]] <- list(ordinary = ordinary)
-    finite <- fit_joint_finite(input, spectral, d = 2L)
+    finite <- fit_joint_finite(input, spectral, d = 2L,
+      n_random_starts = n_random_starts, optimizer_maxit = optimizer_maxit)
     fits[[label]][[spec]]$joint_finite_d2 <- finite
     whitened[[label]][[spec]] <- list(Y = finite$Y_whitened,
       D = finite$D_whitened, residual = finite$whitened_residual)

@@ -1,5 +1,21 @@
 # Work from fhs_application/ after 02_analysis.R. No real-network plots.
-source("reporting.R",local=TRUE)
+# Table summaries use only computed fits/cohorts/graphs.
+graph_summary <- function(graph, label) {
+  stopifnot(!igraph::is_directed(graph), igraph::is_simple(graph))
+  degree <- igraph::degree(graph)
+  comp <- igraph::components(graph)
+  distance <- igraph::distances(graph)
+  # Unordered distinct pairs, within components only: no diagonal or Inf.
+  distance <- distance[upper.tri(distance) & is.finite(distance)]
+  data.frame(network=label, n=igraph::vcount(graph), edges=igraph::ecount(graph),
+    degree_mean=mean(degree), degree_median=median(degree),
+    degree_min=min(degree), degree_max=max(degree), components=comp$no,
+    largest_component=max(comp$csize), largest_percent=100*max(comp$csize)/length(degree),
+    distance_mean=if(length(distance)) mean(distance) else NA_real_,
+    distance_median=if(length(distance)) median(distance) else NA_real_,
+    distance_min=if(length(distance)) min(distance) else NA_real_,
+    distance_max=if(length(distance)) max(distance) else NA_real_)
+}
 all_results <- read.csv("results/combined_results_all_specs.csv",stringsAsFactors=FALSE)
 residual_moran <- read.csv("results/residual_moran.csv",stringsAsFactors=FALSE)
 network_order <- c("relatives","social")
@@ -36,9 +52,9 @@ for (label in network_order) {
   }
 }
 tableC2 <- do.call(rbind,rows)
-write_table(table2,"table2")
-write_table(tableC1,"tableC1")
-write_table(tableC2,"tableC2")
+write.csv(table2, "results/table2.csv", row.names = FALSE)
+write.csv(tableC1, "results/tableC1.csv", row.names = FALSE)
+write.csv(tableC2, "results/tableC2.csv", row.names = FALSE)
 print(table2,row.names=FALSE)
 print(tableC1,row.names=FALSE)
 print(tableC2,row.names=FALSE)

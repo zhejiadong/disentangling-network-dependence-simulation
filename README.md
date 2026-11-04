@@ -1,48 +1,49 @@
 # Disentangling network dependence among multiple variables
 
-R code for the paper ([paper](https://arxiv.org/abs/2506.20974)). The scripts generate Figures 1–2 and Tables 1–2, C1–C2. FHS data are not distributed.
-
-## Run
-
-Install the R dependencies once (`Matrix` is supplied with R):
+R code for the [paper](https://arxiv.org/abs/2506.20974). Open `Project1.Rproj` in RStudio. Install dependencies once:
 
 ```r
 install.packages(c("igraph", "sna", "energy", "ape", "numDeriv"))
 ```
 
-Run from the repository root:
+## Simulation
 
-```sh
-(cd illustrations && Rscript 01_figures.R)
-(cd simulation && Rscript 01_table1.R)
-# Authorized FHS inputs must first be placed in fhs_application/data_raw/.
-(cd fhs_application && Rscript 01_prepare_data.R)
-(cd fhs_application && Rscript 02_analysis.R)
-(cd fhs_application && Rscript 03_tables.R)
+From the project root:
+
+```r
+setwd("simulation")
+source("01_generate_data.R")
+source("02_run_analysis.R")
+source("03_make_table.R")
+setwd("..")
 ```
 
-In RStudio, set the working directory to the script's folder and `source()` it. Settings appear at the top of each driver. The illustration uses 1,000 replicates and 10,000 updates; Table 1 uses 500 replicates per scenario, 500 nodes and 500 edges. Reduced settings are useful for code checks, not paper results.
+Edit settings at the top of `01_generate_data.R`: 500 replications, 500 nodes, 500 edges, seed 321; equilibrium rho = 0.29/0.27/0.25 and direct kappa/alpha = (0.9,0.1)/(0.8,0.2)/(0.7,0.3), innovation SD 0.1. Generation saves `data/simulations.rds`, including the RNG checkpoint. Analysis restores that checkpoint and saves inspectable fits in `results/analysis.rds`. Each stage can run in a fresh R session from `simulation/`. The report reads those files without refitting and writes `results/table1.csv` in paper order.
 
-## Article-to-code map
+## FHS application
 
-All filenames below are relative to the corresponding script folder.
+Place authorized inputs in `fhs_application/data_raw/`, then from the project root:
 
-| Item | Input | Code | Generated output |
-|---|---|---|---|
-| Figure 1 | Synthetic 10-node, 15-edge graph; seed 124 | `illustrations/01_figures.R` | `figures/figure1.pdf` (network, adjacency, geodesic, sample t=1, t=2, t=10,000) |
-| Figure 2 | Same graph and t=1 process | `illustrations/01_figures.R` | `figures/figure2.pdf` (true vs sample t=1) |
-| Table 1 | Independent X/Y on a synthetic 500-node, 500-edge graph | `simulation/01_table1.R`, `R/simulation.R`, `R/prewhiten.R`, `R/lnam.R`, `R/summary.R` | `results/table1.csv` |
-| Table 2 | Authorized prepared FHS cohorts/graphs | `fhs_application/02_analysis.R`, `methods.R`, `03_tables.R` | `results/table2.csv` |
-| Table C1 | Same two graphs | `fhs_application/03_tables.R`, `reporting.R` | `results/tableC1.csv` |
-| Table C2 | Same aligned cohorts/graphs | `fhs_application/03_tables.R` | `results/tableC2.csv` |
+```r
+setwd("fhs_application")
+source("01_prepare_data.R")
+source("02_analysis.R")
+source("03_tables.R")
+setwd("..")
+```
 
-Tables are saved as numeric CSVs and remain available as R objects; no table TeX is generated. Figure scripts also save the individual panel PDFs. Figure 2 reuses Figure 1's sample covariance at t=1.
+Use exactly one c1 and one c2 TAB-delimited table for each accession below, plain text or gzip. Filenames must contain the accession and delimited c1/c2 token; subfolders are supported. Confirm versions, units and coding against the authorized dbGaP dictionaries.
 
-## Settings and reproduction
+| Accession | Required columns |
+|---|---|
+| `pht000031` | `shareid`, `B13`, `B14`, `B24`, `B439`, `B443`, `B448` |
+| `pht003099` | `shareid`, `age2`, `sex` |
+| `pht000836` | `shareid`, `sharealterid`, `ALTERTYPE`, `SPELLBEGIN`, `SPELLEND` |
 
-- Illustrations use a 10-node, 15-edge graph with seed 124. At t=1/2, kappa=0.9, alpha=0.1 and innovation SD=0.5; at t=10,000, kappa=0.234, alpha=0.09 and innovation SD=0.1. The theoretical t=1 covariance is `0.81 A^2 + 0.18 A + 0.26 I`.
-- Table 1 uses direct kappa/alpha=(0.7,0.3), (0.8,0.2), (0.9,0.1), and equilibrium rho=0.25, 0.27, 0.29, with innovation SD=0.1. Proposed and NAM whitening fit separate X and Y covariance models.
-- FHS models use BMI as exposure and LVM/height as outcome, adjusted for age, sex and SBP. 
+B13 is weight (kg), B14 height (cm), B24 first-physician SBP, and B439/B443/B448 septal thickness/posterior wall thickness/LV internal dimension (mm). The scripts construct BMI and LVM/height and analyze Social and Relatives networks separately, adjusting for age, sex and SBP. The intercept/covariate-adjusted MLE is in `R/prewhiten_adjusted.R`; `02_analysis.R` calls it directly and saves the fits. `03_tables.R` reads saved results and writes numeric CSVs.
 
+FHS data are not included.
 
-See [FHS inputs and construction](fhs_application/README.md) for accessions, fields and table definitions. 
+## Illustrations
+
+Independently, from the project root, `setwd("illustrations"); source("01_figures.R"); setwd("..")` generates the synthetic figures. Its settings remain at the top of that script.
