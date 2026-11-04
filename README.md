@@ -1,6 +1,6 @@
 # Disentangling network dependence among multiple variables
 
-R code for the [paper](https://arxiv.org/abs/2506.20974). Open `Project1.Rproj` in RStudio. Install dependencies once:
+R code for the [paper](https://arxiv.org/abs/2506.20974). Install dependencies once:
 
 ```r
 install.packages(c("igraph", "sna", "energy", "ape", "numDeriv"))
