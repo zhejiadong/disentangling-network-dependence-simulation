@@ -1,6 +1,6 @@
 # Disentangling network dependence among multiple variables
 
-R code for the JRSSA article ([paper](https://arxiv.org/abs/2506.20974)). The scripts generate Figures 1–2 and Tables 1–2, C1–C2. FHS data are not distributed.
+R code for the paper ([paper](https://arxiv.org/abs/2506.20974)). The scripts generate Figures 1–2 and Tables 1–2, C1–C2. FHS data are not distributed.
 
 ## Run
 
