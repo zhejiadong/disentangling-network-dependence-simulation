@@ -31,12 +31,12 @@ All filenames below are relative to the corresponding script folder.
 |---|---|---|---|
 | Figure 1 | Synthetic 10-node, 15-edge graph; seed 124 | `illustrations/01_figures.R` | `figures/figure1.pdf` (network, adjacency, geodesic, sample t=1, t=2, t=10,000) |
 | Figure 2 | Same graph and t=1 process | `illustrations/01_figures.R` | `figures/figure2.pdf` (true vs sample t=1) |
-| Table 1 | Independent X/Y on a synthetic 500-node, 500-edge graph | `simulation/01_table1.R`, `R/simulation.R`, `R/prewhiten.R`, `R/lnam.R`, `R/summary.R` | `results/table1.csv`, `results/table1.tex` |
-| Table 2 | Authorized prepared FHS cohorts/graphs | `fhs_application/02_analysis.R`, `methods.R`, `03_tables.R` | `results/table2.csv`, `results/table2.tex` |
-| Table C1 | Same two graphs | `fhs_application/03_tables.R`, `reporting.R` | `results/tableC1.csv`, `results/tableC1.tex` |
-| Table C2 | Same aligned cohorts/graphs | `fhs_application/03_tables.R` | `results/tableC2.csv`, `results/tableC2.tex` |
+| Table 1 | Independent X/Y on a synthetic 500-node, 500-edge graph | `simulation/01_table1.R`, `R/simulation.R`, `R/prewhiten.R`, `R/lnam.R`, `R/summary.R` | `results/table1.csv` |
+| Table 2 | Authorized prepared FHS cohorts/graphs | `fhs_application/02_analysis.R`, `methods.R`, `03_tables.R` | `results/table2.csv` |
+| Table C1 | Same two graphs | `fhs_application/03_tables.R`, `reporting.R` | `results/tableC1.csv` |
+| Table C2 | Same aligned cohorts/graphs | `fhs_application/03_tables.R` | `results/tableC2.csv` |
 
-CSVs preserve numeric results; LaTeX files use the article's table layouts. Figure scripts also save the individual panel PDFs. Figure 2 reuses Figure 1's sample covariance at t=1.
+Tables are saved as numeric CSVs and remain available as R objects; no table TeX is generated. Figure scripts also save the individual panel PDFs. Figure 2 reuses Figure 1's sample covariance at t=1.
 
 ## Settings and reproduction
 
